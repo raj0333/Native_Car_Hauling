@@ -1,45 +1,67 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState } from 'react';
+import { View } from 'react-native';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import AllowPermissionScreen from './src/components/AllowPermissionScreen';
+import EnterNumberScreen from './src/components/EnterNumberScreen';
+import EnterOTP from './src/components/EnterOTP';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+type ScreenType = 'permission' | 'enterNumber' | 'enterOTP';
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+export default function App() {
+  const [screen, setScreen] = useState<ScreenType>('permission');
+  const [phone, setPhone] = useState<string>('');
+  const [countryCode, setCountryCode] = useState<string>('');
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  console.log("📱 CURRENT SCREEN 👉", screen);
+
+  const handleOtpSuccess = (phoneNumber: string, code: string) => {
+    console.log("🔥 OTP SUCCESS CALLBACK HIT");
+
+    setPhone(phoneNumber);
+    setCountryCode(code);
+
+    // ✅ IMPORTANT: force re-render
+    setScreen('enterOTP');
+  };
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+    <View style={{ flex: 1 }}>
+
+      {screen === 'permission' && (
+        <AllowPermissionScreen
+          onAllow={() => {
+            console.log("➡️ Moving to Enter Number");
+            setScreen('enterNumber');
+          }}
+        />
+      )}
+
+      {screen === 'enterNumber' && (
+        <EnterNumberScreen
+          onOtpSuccess={(phone: string, code: string) => {
+            console.log("📞 OTP SUCCESS RECEIVED IN APP");
+            handleOtpSuccess(phone, code);
+          }}
+        />
+      )}
+
+      {screen === 'enterOTP' && (
+        <EnterOTP
+          navigation={{
+            goBack: () => {
+              console.log("⬅️ Back to Enter Number");
+              setScreen('enterNumber');
+            }
+          }}
+          route={{
+            params: {
+              phoneNumber: phone,
+              countryCode: countryCode
+            }
+          }}
+        />
+      )}
+
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
